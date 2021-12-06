@@ -345,7 +345,7 @@ function baseCreateRenderer(
   if (__DEV__ || __FEATURE_PROD_DEVTOOLS__) {
     setDevtoolsHook(target.__VUE_DEVTOOLS_GLOBAL_HOOK__, target)
   }
-
+  //解构传入的RendererOptions对象options, 然后修改了操作DOM的方法的参数名
   const {
     insert: hostInsert,
     remove: hostRemove,
@@ -365,9 +365,9 @@ function baseCreateRenderer(
   // Note: functions inside this closure should use `const xxx = () => {}`
   // style in order to prevent being inlined by minifiers.
   const patch: PatchFn = (
-    n1,
-    n2,
-    container,
+    n1,  //旧的VNode
+    n2,  //新的VNode
+    container,  //父节点DOM元素
     anchor = null,
     parentComponent = null,
     parentSuspense = null,
@@ -375,11 +375,13 @@ function baseCreateRenderer(
     slotScopeIds = null,
     optimized = __DEV__ && isHmrUpdating ? false : !!n2.dynamicChildren
   ) => {
+    //如果新旧vnode是同一个对象就不需要操作
     if (n1 === n2) {
       return
     }
 
     // patching & not same type, unmount old tree
+    //如果新旧VNode的VNodeType不相同，就先卸载旧的VNode,将旧的VNode置空，再挂载新的VNode
     if (n1 && !isSameVNodeType(n1, n2)) {
       anchor = getNextHostNode(n1)
       unmount(n1, parentComponent, parentSuspense, true)
@@ -390,7 +392,7 @@ function baseCreateRenderer(
       optimized = false
       n2.dynamicChildren = null
     }
-
+    //
     const { type, ref, shapeFlag } = n2
     switch (type) {
       case Text:
@@ -1167,6 +1169,7 @@ function baseCreateRenderer(
   ) => {
     n2.slotScopeIds = slotScopeIds
     if (n1 == null) {
+        //如果旧的VNode为null,且是keep-alive组件，激活
       if (n2.shapeFlag & ShapeFlags.COMPONENT_KEPT_ALIVE) {
         ;(parentComponent!.ctx as KeepAliveContext).activate(
           n2,
@@ -1176,6 +1179,7 @@ function baseCreateRenderer(
           optimized
         )
       } else {
+        //不是keep-alive组件就进行组件的挂载
         mountComponent(
           n2,
           container,
@@ -1187,6 +1191,7 @@ function baseCreateRenderer(
         )
       }
     } else {
+      //如果不是null,则更新组件
       updateComponent(n1, n2, optimized)
     }
   }
@@ -2311,11 +2316,13 @@ function baseCreateRenderer(
   }
 
   const render: RootRenderFunction = (vnode, container, isSVG) => {
+    //如果vnode为null,则卸载父容器的_vnode
     if (vnode == null) {
       if (container._vnode) {
         unmount(container._vnode, null, null, true)
       }
     } else {
+      //调用patch方法
       patch(container._vnode || null, vnode, container, null, null, null, isSVG)
     }
     flushPostFlushCbs()

@@ -38,10 +38,10 @@ const rendererOptions = extend({ patchProp }, nodeOps)
 let renderer: Renderer<Element | ShadowRoot> | HydrationRenderer
 
 let enabledHydration = false
-
+//创建渲染器对象
 function ensureRenderer() {
   return (
-    renderer ||
+    renderer ||                             //定义attribute处理方法和DOM操作方法
     (renderer = createRenderer<Node, Element | ShadowRoot>(rendererOptions))
   )
 }
@@ -72,10 +72,12 @@ export const createApp = ((...args) => {
   }
 
   const { mount } = app
+  //重写app的mount方法
   app.mount = (containerOrSelector: Element | ShadowRoot | string): any => {
+    //标准化容器
     const container = normalizeContainer(containerOrSelector)
     if (!container) return
-
+    //component开发者提供的App根组件
     const component = app._component
     if (!isFunction(component) && !component.render && !component.template) {
       // __UNSAFE__
@@ -99,9 +101,11 @@ export const createApp = ((...args) => {
     }
 
     // clear content before mounting
+    //清除容器的内容，如果容器有子节点将会被清除掉
     container.innerHTML = ''
     const proxy = mount(container, false, container instanceof SVGElement)
     if (container instanceof Element) {
+      //清除掉容器的v-cloak Attribute,这个可以属性可以和{display:none}结合解决网络慢的情况下的页面闪动问题
       container.removeAttribute('v-cloak')
       container.setAttribute('data-v-app', '')
     }
@@ -180,6 +184,8 @@ function injectCompilerOptionsCheck(app: App) {
 function normalizeContainer(
   container: Element | ShadowRoot | string
 ): Element | null {
+  //如果容器是一个字符串，调用document.querySelector(container)
+  //这就是可以传入"#app"作为容器的原因
   if (isString(container)) {
     const res = document.querySelector(container)
     if (__DEV__ && !res) {

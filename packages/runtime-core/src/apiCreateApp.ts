@@ -184,17 +184,17 @@ export function createAppAPI<HostElement>(
       rootProps = null
     }
 
-    const context = createAppContext()
-    const installedPlugins = new Set()
+    const context = createAppContext()  //创建一个AppContext对象
+    const installedPlugins = new Set() //储存安装的plugin
 
-    let isMounted = false
+    let isMounted = false //标记为未挂载
 
     const app: App = (context.app = {
       _uid: uid++,
-      _component: rootComponent as ConcreteComponent,
-      _props: rootProps,
+      _component: rootComponent as ConcreteComponent, //开发者定义的App根组件
+      _props: rootProps, //开发者传入的根组件相关的props
       _container: null,
-      _context: context,
+      _context: context,  //定义的AppContent对象
       _instance: null,
 
       version,
@@ -210,7 +210,7 @@ export function createAppAPI<HostElement>(
           )
         }
       },
-
+      //安装插件
       use(plugin: Plugin, ...options: any[]) {
         if (installedPlugins.has(plugin)) {
           __DEV__ && warn(`Plugin has already been applied to target app.`)
@@ -228,7 +228,7 @@ export function createAppAPI<HostElement>(
         }
         return app
       },
-
+      //混入
       mixin(mixin: ComponentOptions) {
         if (__FEATURE_OPTIONS_API__) {
           if (!context.mixins.includes(mixin)) {
@@ -244,7 +244,7 @@ export function createAppAPI<HostElement>(
         }
         return app
       },
-
+      //全局定义组件
       component(name: string, component?: Component): any {
         if (__DEV__) {
           validateComponentName(name, context.config)
@@ -258,7 +258,7 @@ export function createAppAPI<HostElement>(
         context.components[name] = component
         return app
       },
-
+      //指令方法
       directive(name: string, directive?: Directive) {
         if (__DEV__) {
           validateDirectiveName(name)
@@ -273,13 +273,14 @@ export function createAppAPI<HostElement>(
         context.directives[name] = directive
         return app
       },
-
+      //挂载方法
       mount(
         rootContainer: HostElement,
         isHydrate?: boolean,
         isSVG?: boolean
       ): any {
         if (!isMounted) {
+          //创建VNode对象vnode
           const vnode = createVNode(
             rootComponent as ConcreteComponent,
             rootProps
@@ -298,9 +299,12 @@ export function createAppAPI<HostElement>(
           if (isHydrate && hydrate) {
             hydrate(vnode as VNode<Node, Element>, rootContainer as any)
           } else {
+            //渲染vnode
             render(vnode, rootContainer, isSVG)
           }
+          //标记为挂载
           isMounted = true
+          //赋值为父容器
           app._container = rootContainer
           // for devtools and telemetry
           ;(rootContainer as any).__vue_app__ = app
@@ -320,7 +324,7 @@ export function createAppAPI<HostElement>(
           )
         }
       },
-
+      //卸载方法
       unmount() {
         if (isMounted) {
           render(null, app._container)
@@ -333,7 +337,7 @@ export function createAppAPI<HostElement>(
           warn(`Cannot unmount an app that is not mounted.`)
         }
       },
-
+      //共享数据方法
       provide(key, value) {
         if (__DEV__ && (key as string | symbol) in context.provides) {
           warn(

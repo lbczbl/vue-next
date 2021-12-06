@@ -2,7 +2,8 @@ import { isArray, isString, isObject, hyphenate } from './'
 import { isNoUnitNumericStyleProp } from './domAttrConfig'
 
 export type NormalizedStyle = Record<string, string | number>
-
+//如果是字符串或者对象直接返回
+//如果是数组，将数组的每个元素的key和value组合成style对象
 export function normalizeStyle(
   value: unknown
 ): NormalizedStyle | string | undefined {
@@ -61,7 +62,7 @@ export function stringifyStyle(
   }
   return ret
 }
-
+//对class进行标准化，如果是字符串就直接返回对应的原值，如果是数组就对数组的每个元素进行标准化，如果是对象就获取对象的属性值为true然后用空格分开
 export function normalizeClass(value: unknown): string {
   let res = ''
   if (isString(value)) {

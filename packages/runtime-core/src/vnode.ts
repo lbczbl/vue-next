@@ -400,6 +400,7 @@ function createBaseVNode(
   isBlockNode = false,
   needFullChildrenNormalization = false
 ) {
+  //生成vnode对象，包含了type和props
   const vnode = {
     __v_isVNode: true,
     __v_skip: true,
@@ -429,6 +430,7 @@ function createBaseVNode(
   } as VNode
 
   if (needFullChildrenNormalization) {
+    //标准化子节点
     normalizeChildren(vnode, children)
     // normalize suspense children
     if (__FEATURE_SUSPENSE__ && shapeFlag & ShapeFlags.SUSPENSE) {
@@ -495,7 +497,7 @@ function _createVNode(
     }
     type = Comment
   }
-
+  //如果传入type是vnode则直接复制一份并且标准化子节点
   if (isVNode(type)) {
     // createVNode receiving an existing vnode. This happens in cases like
     // <component :is="vnode"/>
@@ -520,8 +522,10 @@ function _createVNode(
   // class & style normalization.
   if (props) {
     // for reactive or proxy objects, we need to clone it to enable mutation.
+    //如果有props就进行参数标准化
     props = guardReactiveProps(props)!
     let { class: klass, style } = props
+    //对class标准化
     if (klass && !isString(klass)) {
       props.class = normalizeClass(klass)
     }
@@ -534,8 +538,8 @@ function _createVNode(
       props.style = normalizeStyle(style)
     }
   }
-
   // encode the vnode type information into a bitmap
+  //根据type的类型编码成ShapeFlags
   const shapeFlag = isString(type)
     ? ShapeFlags.ELEMENT
     : __FEATURE_SUSPENSE__ && isSuspense(type)
@@ -559,7 +563,7 @@ function _createVNode(
       type
     )
   }
-
+  //真正的创建VNode
   return createBaseVNode(
     type,
     props,
