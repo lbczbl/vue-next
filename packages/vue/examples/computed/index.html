@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script src="../../dist/vue.global.js"></script>
+    <div id="root">
+            <h3>计算属性</h3>
+            <input type="text" id="num1">
+            <input type="text" id="num2">
+            <button onclick="addNum1()"></button>
+    </div>
+    <script>
+        const { createApp, computed, ref } = Vue 
+        const rootContainer = document.querySelector("#root");
+        let counter = document.getElementById('num1').value
+        let compoutedCounter = document.getElementById('num2').value
+        createApp({
+            setup() {
+                counter = ref(2)
+                compoutedCounter = computed({
+                    get() {
+                        return counter.value * counter.value
+                    },
+                    set(value) {
+                        counter.value = value
+                    }
+                })
+            },
+        }).mount(rootContainer)
+        function addNum1() {
+                counter.value++
+            }
+    </script>
+</body>
+</html>

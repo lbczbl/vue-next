@@ -1,0 +1,31 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script src="../../dist/vue.global.js"></script>
+    <div id="root"></div>
+    
+    <script type="module">
+        const rootContainer = document.querySelector("#root");
+        const { createApp, h, ref } = Vue
+        const count = ref({ id: 3});
+        createApp({
+            setup() {
+
+            },
+            render() {
+                return h(
+                "div",
+                { tId: "helloWorld" },
+                `hello world: count: ${count.value.id}`
+                );
+            },
+        }).mount(rootContainer)
+    </script>
+</body>
+</html>

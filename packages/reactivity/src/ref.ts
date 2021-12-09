@@ -89,25 +89,33 @@ export function shallowRef(value?: unknown) {
 }
 
 function createRef(rawValue: unknown, shallow: boolean) {
+//如果已经是ref对象，直接返回该对象
   if (isRef(rawValue)) {
     return rawValue
   }
+  //RefImpl对rawValue进行封装
   return new RefImpl(rawValue, shallow)
 }
-
+//ref和reactive的区别
+//1.一般基础数据类型用ref API,对象或数组变为响应式用reactive API
+//2.区别在于ref内部实现机制也是基于reactive
+//ref内部提供了set方法，可以将整个原值数据value完全替换，类似let
+//reactive是只能对原始数据value的属性进行修改。类似于const的限制
 class RefImpl<T> {
-  private _value: T
-  private _rawValue: T
+  private _value: T  //操作的值
+  private _rawValue: T //原始值
 
   public dep?: Dep = undefined
   public readonly __v_isRef = true
 
   constructor(value: T, public readonly _shallow: boolean) {
+    //如果value是对象或者数组，则_rawValue是响应式值的原始对象
     this._rawValue = _shallow ? value : toRaw(value)
     this._value = _shallow ? value : toReactive(value)
   }
 
   get value() {
+    //收集依赖返回操作的值
     trackRefValue(this)
     return this._value
   }
@@ -115,6 +123,7 @@ class RefImpl<T> {
   set value(newVal) {
     newVal = this._shallow ? newVal : toRaw(newVal)
     if (hasChanged(newVal, this._rawValue)) {
+    //设置新值和派发依赖
       this._rawValue = newVal
       this._value = this._shallow ? newVal : toReactive(newVal)
       triggerRefValue(this, newVal)

@@ -186,13 +186,16 @@ export function resetTracking() {
 }
 
 export function track(target: object, type: TrackOpTypes, key: unknown) {
+//如果当前没有副作用渲染函数直接返回
   if (!isTracking()) {
     return
   }
+  //targetMap保存target和key的关系
   let depsMap = targetMap.get(target)
   if (!depsMap) {
     targetMap.set(target, (depsMap = new Map()))
   }
+  //depsMap保存key和副作用渲染函数的关系
   let dep = depsMap.get(key)
   if (!dep) {
     depsMap.set(key, (dep = createDep()))
@@ -201,7 +204,7 @@ export function track(target: object, type: TrackOpTypes, key: unknown) {
   const eventInfo = __DEV__
     ? { effect: activeEffect, target, type, key }
     : undefined
-
+//将key和副作用渲染函数联系起来
   trackEffects(dep, eventInfo)
 }
 
@@ -248,12 +251,13 @@ export function trigger(
   oldValue?: unknown,
   oldTarget?: Map<unknown, unknown> | Set<unknown>
 ) {
+//从targetMap找到target对应的depsMap依赖集合
   const depsMap = targetMap.get(target)
   if (!depsMap) {
     // never been tracked
     return
   }
-
+  //deps添加到获取的对应depsMap依赖结合
   let deps: (Dep | undefined)[] = []
   if (type === TriggerOpTypes.CLEAR) {
     // collection being cleared
@@ -308,11 +312,11 @@ export function trigger(
     if (deps[0]) {
       if (__DEV__) {
         triggerEffects(deps[0], eventInfo)
-      } else {
+      } else { //如果依赖集合只有一个，直接执行对应函数
         triggerEffects(deps[0])
       }
     }
-  } else {
+  } else {//如果依赖集合有多个，就遍历执行对应的函数
     const effects: ReactiveEffect[] = []
     for (const dep of deps) {
       if (dep) {

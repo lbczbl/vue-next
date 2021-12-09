@@ -81,10 +81,13 @@ function createArrayInstrumentations() {
 function createGetter(isReadonly = false, shallow = false) {
   return function get(target: Target, key: string | symbol, receiver: object) {
     if (key === ReactiveFlags.IS_REACTIVE) {
+    //获取"__v_isReactive"属性，返回true，已经是响应式
       return !isReadonly
     } else if (key === ReactiveFlags.IS_READONLY) {
+    //获取"__v_isReadonly"属性，返回false
       return isReadonly
-    } else if (
+    } else if ( //获取"__v_raw"属性，如果target是一个Proxy对象，直接返回target
+    //"__v_raw"属性用来判断是否已经是响应式对象
       key === ReactiveFlags.RAW &&
       receiver ===
         (isReadonly
@@ -100,31 +103,33 @@ function createGetter(isReadonly = false, shallow = false) {
     }
 
     const targetIsArray = isArray(target)
-
+    //如果是数组且命中了一些属性，则执行的是数组的函数
+    //命中的属性包括includes、indexOf、lastIndexOf 等，执行数组的这些函数方法，并对每个数组的每个元素执行收集依赖
     if (!isReadonly && targetIsArray && hasOwn(arrayInstrumentations, key)) {
       return Reflect.get(arrayInstrumentations, key, receiver)
     }
-
+    //Reflect求值
     const res = Reflect.get(target, key, receiver)
-
+    //判断是否是特殊的属性值，symbol，__proto__,__v_isRef,__isVue
     if (isSymbol(key) ? builtInSymbols.has(key) : isNonTrackableKeys(key)) {
       return res
     }
-
+    //依赖收集
     if (!isReadonly) {
       track(target, TrackOpTypes.GET, key)
-    }
-
+    } 
+    //shallow直接返回
     if (shallow) {
       return res
     }
-
+    //如果是ref，如果target不是数组或者key不是整数，则执行数据拆包
     if (isRef(res)) {
       // ref unwrapping - does not apply for Array + integer key.
       const shouldUnwrap = !targetIsArray || !isIntegerKey(key)
       return shouldUnwrap ? res.value : res
     }
-
+    //如果res是对象，递归执行reactive,把res变成响应式对象
+    //优化点：只有属性值被访问后才会被劫持，避免了初始化就全劫持的性能消耗
     if (isObject(res)) {
       // Convert returned value into a proxy as well. we do the isObject check
       // here to avoid invalid value warning. Also need to lazy access readonly
@@ -145,7 +150,7 @@ function createSetter(shallow = false) {
     key: string | symbol,
     value: unknown,
     receiver: object
-  ): boolean {
+  ): boolean { //如果值没有变化则直接返回
     let oldValue = (target as any)[key]
     if (!shallow && !isReadonly(value)) {
       value = toRaw(value)
@@ -162,8 +167,10 @@ function createSetter(shallow = false) {
       isArray(target) && isIntegerKey(key)
         ? Number(key) < target.length
         : hasOwn(target, key)
+    //设置属性
     const result = Reflect.set(target, key, value, receiver)
     // don't trigger if target is something up in the prototype chain of original
+    //如果不是原型链上的属性，执行trigger
     if (target === toRaw(receiver)) {
       if (!hadKey) {
         trigger(target, TriggerOpTypes.ADD, key, value)
@@ -197,7 +204,7 @@ function ownKeys(target: object): (string | symbol)[] {
   track(target, TrackOpTypes.ITERATE, isArray(target) ? 'length' : ITERATE_KEY)
   return Reflect.ownKeys(target)
 }
-
+//组件实例对象执行render函数生成子树VNode时，会调用响应式对象的get函数
 export const mutableHandlers: ProxyHandler<object> = {
   get,
   set,

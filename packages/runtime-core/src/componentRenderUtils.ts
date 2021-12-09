@@ -317,7 +317,7 @@ const isElementRoot = (vnode: VNode) => {
     vnode.type === Comment // potential v-if branch switch
   )
 }
-
+//对比新旧组件是否需要更新，避免不必要的渲染
 export function shouldUpdateComponent(
   prevVNode: VNode,
   nextVNode: VNode,

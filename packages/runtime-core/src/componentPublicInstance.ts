@@ -394,6 +394,7 @@ export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
     key: string,
     value: any
   ): boolean {
+    //优先对setupState赋值，如果找不到则给data赋值，如果都没有对应的key，直接赋值在ctx上
     const { data, setupState, ctx } = instance
     if (setupState !== EMPTY_OBJ && hasOwn(setupState, key)) {
       setupState[key] = value
@@ -428,7 +429,8 @@ export const PublicInstanceProxyHandlers: ProxyHandler<any> = {
     }
     return true
   },
-
+  //判断是否有值
+  //判断是否有accessCache、data、setupState、propsOptions、ctx、publicPropertiesMap、appContext.config.globalProperties
   has(
     {
       _: { data, setupState, accessCache, ctx, appContext, propsOptions }

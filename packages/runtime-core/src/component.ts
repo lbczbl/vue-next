@@ -206,146 +206,146 @@ export type InternalRenderFunction = {
  * useful for advanced external libraries and tools.
  */
 export interface ComponentInternalInstance {
-  uid: number
-  type: ConcreteComponent
-  parent: ComponentInternalInstance | null
-  root: ComponentInternalInstance
-  appContext: AppContext
+  uid: number   //组件的id
+  type: ConcreteComponent  //组件类型
+  parent: ComponentInternalInstance | null //父组件实例
+  root: ComponentInternalInstance  //根组件实例
+  appContext: AppContext  //App上下文
   /**
    * Vnode representing this component in its parent's vdom tree
    */
-  vnode: VNode
+  vnode: VNode   //组件VNode
   /**
    * The pending new vnode from parent updates
    * @internal
    */
-  next: VNode | null
+  next: VNode | null  //要更新到的VNode
   /**
    * Root vnode of this component's own vdom tree
    */
-  subTree: VNode
+  subTree: VNode //子树VNode
   /**
    * Bound effect runner to be passed to schedulers
    */
-  update: SchedulerJob
+  update: SchedulerJob  //带副作用的渲染函数
   /**
    * The render function that returns vdom tree.
    * @internal
    */
-  render: InternalRenderFunction | null
+  render: InternalRenderFunction | null  //渲染函数
   /**
    * SSR render function
    * @internal
    */
-  ssrRender?: Function | null
+  ssrRender?: Function | null  //SSR渲染函数
   /**
    * Object containing values this component provides for its descendents
    * @internal
    */
-  provides: Data
+  provides: Data  //依赖注入的数据
   /**
    * Tracking reactive effects (e.g. watchers) associated with this component
    * so that they can be automatically stopped on component unmount
    * @internal
    */
-  scope: EffectScope
+  scope: EffectScope //收集响应式依赖的作用域
   /**
    * cache for proxy access type to avoid hasOwnProperty calls
    * @internal
    */
-  accessCache: Data | null
+  accessCache: Data | null  //读取proxy属性值之后的缓存
   /**
    * cache for render function values that rely on _ctx but won't need updates
    * after initialized (e.g. inline handlers)
    * @internal
    */
-  renderCache: (Function | VNode)[]
+  renderCache: (Function | VNode)[]  //渲染缓存
 
   /**
    * Resolved component registry, only for components with mixins or extends
    * @internal
    */
-  components: Record<string, ConcreteComponent> | null
+  components: Record<string, ConcreteComponent> | null //注册的组件
   /**
    * Resolved directive registry, only for components with mixins or extends
    * @internal
    */
-  directives: Record<string, Directive> | null
+  directives: Record<string, Directive> | null //注册的指令
   /**
    * Resolved filters registry, v2 compat only
    * @internal
    */
-  filters?: Record<string, Function>
+  filters?: Record<string, Function> //过滤器 兼容V2
   /**
    * resolved props options
    * @internal
    */
-  propsOptions: NormalizedPropsOptions
+  propsOptions: NormalizedPropsOptions  //props
   /**
    * resolved emits options
    * @internal
    */
-  emitsOptions: ObjectEmitsOptions | null
+  emitsOptions: ObjectEmitsOptions | null  //emits
   /**
    * resolved inheritAttrs options
    * @internal
    */
-  inheritAttrs?: boolean
+  inheritAttrs?: boolean  //attrs
   /**
    * is custom element?
    */
-  isCE?: boolean
+  isCE?: boolean //是否是自定义组件
   /**
    * custom element specific HMR method
    */
-  ceReload?: (newStyles?: string[]) => void
+  ceReload?: (newStyles?: string[]) => void  //自定义组件相关方法
 
   // the rest are only for stateful components ---------------------------------
 
   // main proxy that serves as the public instance (`this`)
-  proxy: ComponentPublicInstance | null
+  proxy: ComponentPublicInstance | null  //渲染上下文代理对象，当使用this时就是指的这个对象
 
   // exposed properties via expose()
-  exposed: Record<string, any> | null
-  exposeProxy: Record<string, any> | null
+  exposed: Record<string, any> | null  //组件暴露的对象
+  exposeProxy: Record<string, any> | null  //组件暴露对象的代理对象
 
   /**
    * alternative proxy used only for runtime-compiled render functions using
    * `with` block
    * @internal
    */
-  withProxy: ComponentPublicInstance | null
+  withProxy: ComponentPublicInstance | null  //带有with区块的渲染上下文对象
   /**
    * This is the target for the public instance proxy. It also holds properties
    * injected by user options (computed, methods etc.) and user-attached
    * custom properties (via `this.x = ...`)
    * @internal
    */
-  ctx: Data
+  ctx: Data  //渲染上下文，即组件对象的信息
 
   // state
   data: Data
   props: Data
   attrs: Data
   slots: InternalSlots
-  refs: Data
+  refs: Data //组件或者DOM的ref引用
   emit: EmitFn
   /**
    * used for keeping track of .once event handlers on components
    * @internal
    */
-  emitted: Record<string, boolean> | null
+  emitted: Record<string, boolean> | null //跟踪.once已经触发的事件
   /**
    * used for caching the value returned from props default factory functions to
    * avoid unnecessary watcher trigger
    * @internal
    */
-  propsDefaults: Data
+  propsDefaults: Data  //工厂函数生成的默认props数据
   /**
    * setup related
    * @internal
    */
-  setupState: Data
+  setupState: Data  //setup函数返回的响应式结果
   /**
    * devtools access to additional info
    * @internal
@@ -354,85 +354,85 @@ export interface ComponentInternalInstance {
   /**
    * @internal
    */
-  setupContext: SetupContext | null
+  setupContext: SetupContext | null  //setup函数上下文数据
 
   /**
    * suspense related
    * @internal
    */
-  suspense: SuspenseBoundary | null
+  suspense: SuspenseBoundary | null //异步组件
   /**
    * suspense pending batch id
    * @internal
    */
-  suspenseId: number
+  suspenseId: number //异步组件ID
   /**
    * @internal
    */
-  asyncDep: Promise<any> | null
+  asyncDep: Promise<any> | null  //setup函数返回的异步函数结果
   /**
    * @internal
    */
-  asyncResolved: boolean
+  asyncResolved: boolean  //异步函数调用是否完成
 
   // lifecycle
   isMounted: boolean
   isUnmounted: boolean
-  isDeactivated: boolean
+  isDeactivated: boolean  //是否已激活
   /**
-   * @internal
+   * @internal bc
    */
   [LifecycleHooks.BEFORE_CREATE]: LifecycleHook
   /**
-   * @internal
+   * @internal c
    */
   [LifecycleHooks.CREATED]: LifecycleHook
   /**
-   * @internal
+   * @internal bm
    */
   [LifecycleHooks.BEFORE_MOUNT]: LifecycleHook
   /**
-   * @internal
+   * @internal m
    */
   [LifecycleHooks.MOUNTED]: LifecycleHook
   /**
-   * @internal
+   * @internal bu
    */
   [LifecycleHooks.BEFORE_UPDATE]: LifecycleHook
   /**
-   * @internal
+   * @internal u
    */
   [LifecycleHooks.UPDATED]: LifecycleHook
   /**
-   * @internal
+   * @internal bum
    */
   [LifecycleHooks.BEFORE_UNMOUNT]: LifecycleHook
   /**
-   * @internal
+   * @internal um
    */
   [LifecycleHooks.UNMOUNTED]: LifecycleHook
   /**
-   * @internal
+   * @internal rtc
    */
   [LifecycleHooks.RENDER_TRACKED]: LifecycleHook
   /**
-   * @internal
+   * @internal rtg
    */
   [LifecycleHooks.RENDER_TRIGGERED]: LifecycleHook
   /**
-   * @internal
+   * @internal a
    */
   [LifecycleHooks.ACTIVATED]: LifecycleHook
   /**
-   * @internal
+   * @internal da
    */
   [LifecycleHooks.DEACTIVATED]: LifecycleHook
   /**
-   * @internal
+   * @internal ec
    */
   [LifecycleHooks.ERROR_CAPTURED]: LifecycleHook
   /**
-   * @internal
+   * @internal sp
    */
   [LifecycleHooks.SERVER_PREFETCH]: LifecycleHook<() => Promise<unknown>>
 }
@@ -578,12 +578,12 @@ export function setupComponent(
   isSSR = false
 ) {
   isInSSRComponentSetup = isSSR
-
+  //从vnode解构并初始化一些属性
   const { props, children } = instance.vnode
   const isStateful = isStatefulComponent(instance)
   initProps(instance, props, isStateful, isSSR)
   initSlots(instance, children)
-
+  //设置有状态组件实例
   const setupResult = isStateful
     ? setupStatefulComponent(instance, isSSR)
     : undefined
@@ -622,9 +622,12 @@ function setupStatefulComponent(
     }
   }
   // 0. create render proxy property access cache
+  //初始化一个accessCache对象，用来缓存查找ctx后得到的值，避免重复查找ctx中的属性
   instance.accessCache = Object.create(null)
   // 1. create public instance / render proxy
   // also mark it raw so it's never observed
+  //建立一个ctx的代理对象，当访问或者修改proxy的属性时会触发PublicInstanceProxyHandlers方法
+  //这里设置代理是为了方便用户使用，只需要访问instance.proxy就能访问和修改data、setupState、props...等属性中的值
   instance.proxy = markRaw(new Proxy(instance.ctx, PublicInstanceProxyHandlers))
   if (__DEV__) {
     exposePropsOnRenderContext(instance)
@@ -632,11 +635,13 @@ function setupStatefulComponent(
   // 2. call setup()
   const { setup } = Component
   if (setup) {
+    //如果setup参数大于1，则创建setupContent
     const setupContext = (instance.setupContext =
       setup.length > 1 ? createSetupContext(instance) : null)
 
     setCurrentInstance(instance)
     pauseTracking()
+    //执行setup,用callWithErrorHandling封装一层捕获错误
     const setupResult = callWithErrorHandling(
       setup,
       instance,
@@ -669,9 +674,11 @@ function setupStatefulComponent(
         )
       }
     } else {
+    //处理函数的返回结果
       handleSetupResult(instance, setupResult, isSSR)
     }
   } else {
+    //完成组件实例的设置
     finishComponentSetup(instance, isSSR)
   }
 }
@@ -687,7 +694,7 @@ export function handleSetupResult(
       // when the function's name is `ssrRender` (compiled by SFC inline mode),
       // set it as ssrRender instead.
       instance.ssrRender = setupResult
-    } else {
+    } else { //如果返回结果是函数，则将其作为渲染函数render,这个函数就是用来生成subTree VNode的函数
       instance.render = setupResult as InternalRenderFunction
     }
   } else if (isObject(setupResult)) {
@@ -702,6 +709,7 @@ export function handleSetupResult(
     if (__DEV__ || __FEATURE_PROD_DEVTOOLS__) {
       instance.devtoolsRawSetupState = setupResult
     }
+    //如果返回结果是对象，则变成响应式赋值给setupState属性
     instance.setupState = proxyRefs(setupResult)
     if (__DEV__) {
       exposeSetupStateOnRenderContext(instance)
@@ -806,7 +814,7 @@ export function finishComponentSetup(
       installWithProxy(instance)
     }
   }
-
+  //兼容v2.0 OPTIONS API
   // support for 2.x options
   if (__FEATURE_OPTIONS_API__ && !(__COMPAT__ && skipOptions)) {
     setCurrentInstance(instance)
@@ -875,7 +883,8 @@ export function createSetupContext(
     }
     instance.exposed = exposed || {}
   }
-
+  //setupContent是setup函数的第二个参数
+  //返回attrs、slots、emit、expose  expose组件需要对外暴露的值
   let attrs: Data
   if (__DEV__) {
     // We use getters in dev in case libs like test-utils overwrite instance

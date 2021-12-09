@@ -49,10 +49,13 @@ class ComputedRefImpl<T> {
 
   get value() {
     // the computed ref may get wrapped by other proxies e.g. readonly() #3376
+    //收集依赖
     const self = toRaw(this)
     trackRefValue(self)
+    //如果是第一次执行
     if (self._dirty) {
       self._dirty = false
+      //执行effect的run函数，并缓存值
       self._value = self.effect.run()!
     }
     return self._value
@@ -62,11 +65,12 @@ class ComputedRefImpl<T> {
     this._setter(newValue)
   }
 }
-
+//传参方式一：传入一个参数
 export function computed<T>(
   getter: ComputedGetter<T>,
   debugOptions?: DebuggerOptions
 ): ComputedRef<T>
+//传参方式二：传入包括get和set两个函数的对象
 export function computed<T>(
   options: WritableComputedOptions<T>,
   debugOptions?: DebuggerOptions
@@ -77,7 +81,7 @@ export function computed<T>(
 ) {
   let getter: ComputedGetter<T>
   let setter: ComputedSetter<T>
-
+  //标准化参数
   const onlyGetter = isFunction(getterOrOptions)
   if (onlyGetter) {
     getter = getterOrOptions
@@ -90,13 +94,13 @@ export function computed<T>(
     getter = getterOrOptions.get
     setter = getterOrOptions.set
   }
-
+  //将getter或setter用ComputedRefImpl封装起来
   const cRef = new ComputedRefImpl(getter, setter, onlyGetter || !setter)
 
   if (__DEV__ && debugOptions) {
     cRef.effect.onTrack = debugOptions.onTrack
     cRef.effect.onTrigger = debugOptions.onTrigger
   }
-
+  //返回ComputedRefImpl对象
   return cRef as any
 }
