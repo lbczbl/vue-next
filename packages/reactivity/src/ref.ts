@@ -104,22 +104,18 @@ function createRef(rawValue: unknown, shallow: boolean) {
 class RefImpl<T> {
   private _value: T  //操作的值
   private _rawValue: T //原始值
-
   public dep?: Dep = undefined
   public readonly __v_isRef = true
-
   constructor(value: T, public readonly _shallow: boolean) {
     //如果value是对象或者数组，则_rawValue是响应式值的原始对象
     this._rawValue = _shallow ? value : toRaw(value)
     this._value = _shallow ? value : toReactive(value)
   }
-
   get value() {
     //收集依赖返回操作的值
     trackRefValue(this)
     return this._value
   }
-
   set value(newVal) {
     newVal = this._shallow ? newVal : toRaw(newVal)
     if (hasChanged(newVal, this._rawValue)) {
