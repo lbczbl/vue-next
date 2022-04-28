@@ -6,35 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
+<script src="../../dist/vue.global.js"></script>
 <body>
-    <script src="../../dist/vue.global.js"></script>
-    <div id="root">
-            <h3>计算属性</h3>
-            <input type="text" id="num1">
-            <input type="text" id="num2">
-            <button onclick="addNum1()"></button>
+    <div id="app">
+      <h1>computed</h1>
+      <p>{{ state.counter }}</p>
+      <p>{{ double }}</p>
     </div>
+
     <script>
-        const { createApp, computed, ref } = Vue 
-        const rootContainer = document.querySelector("#root");
-        let counter = document.getElementById('num1').value
-        let compoutedCounter = document.getElementById('num2').value
-        createApp({
-            setup() {
-                counter = ref(2)
-                compoutedCounter = computed({
-                    get() {
-                        return counter.value * counter.value
-                    },
-                    set(value) {
-                        counter.value = value
-                    }
-                })
-            },
-        }).mount(rootContainer)
-        function addNum1() {
-                counter.value++
-            }
+      const app = Vue.createApp({
+        setup(props, { emit, slots, attrs }) {
+          const state = Vue.reactive({
+            counter: 1
+          })
+  
+          setInterval(() => {
+            state.counter++
+          }, 1000)
+  
+          const double = Vue.computed(() => state.counter * 2)
+  
+          return {
+            state,
+            double
+          }
+        }
+      })
+  
+      app.mount('#app')
     </script>
-</body>
+  </body>
+  
 </html>

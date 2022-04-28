@@ -166,9 +166,10 @@ export function watch<T = any, Immediate extends Readonly<boolean> = false>(
         `supports \`watch(source, cb, options?) signature.`
     )
   }
+  // 返回的是一个stop函数
   return doWatch(source as any, cb, options)
 }
-
+// 真正的watch方法
 function doWatch(
   source: WatchSource | WatchSource[] | WatchEffect | object,
   cb: WatchCallback | null,
@@ -188,7 +189,7 @@ function doWatch(
       )
     }
   }
-
+  // 校验数据源
   const warnInvalidSource = (s: unknown) => {
     warn(
       `Invalid watch source: `,
@@ -202,14 +203,16 @@ function doWatch(
   let getter: () => any
   let forceTrigger = false
   let isMultiSource = false
-
+  // 如果源是ref类型
   if (isRef(source)) {
     getter = () => source.value
     forceTrigger = !!source._shallow
   } else if (isReactive(source)) {
+    // 如果源是响应式对象，自动进行深度监听
     getter = () => source
     deep = true
   } else if (isArray(source)) {
+    // 侦听多个源并遍历
     isMultiSource = true
     forceTrigger = source.some(isReactive)
     getter = () =>
@@ -231,6 +234,7 @@ function doWatch(
         callWithErrorHandling(source, instance, ErrorCodes.WATCH_GETTER)
     } else {
       // no cb -> simple effect
+      // 没有传回回调函数的情况
       getter = () => {
         if (instance && instance.isUnmounted) {
           return
@@ -265,13 +269,14 @@ function doWatch(
       return val
     }
   }
-
+  // 深度监听，递归遍历getter函数返回的值
   if (cb && deep) {
     const baseGetter = getter
     getter = () => traverse(baseGetter())
   }
 
   let cleanup: () => void
+  // 定义失效时需要传参的函数
   let onInvalidate: InvalidateCbRegistrator = (fn: () => void) => {
     cleanup = effect.onStop = () => {
       callWithErrorHandling(fn, instance, ErrorCodes.WATCH_CLEANUP)
@@ -296,6 +301,7 @@ function doWatch(
   }
 
   let oldValue = isMultiSource ? [] : INITIAL_WATCHER_VALUE
+  // 定义任务队列中的任务，执行的过程会进行tarck 和 trigger
   const job: SchedulerJob = () => {
     if (!effect.active) {
       return
@@ -316,7 +322,9 @@ function doWatch(
           isCompatEnabled(DeprecationTypes.WATCH_ARRAY, instance))
       ) {
         // cleanup before running cb again
+        // 调用回调之前先检查是否存在过期回调，如果存在
         if (cleanup) {
+          // 先执行过期回调
           cleanup()
         }
         callWithAsyncErrorHandling(cb, instance, ErrorCodes.WATCH_CALLBACK, [
@@ -339,8 +347,10 @@ function doWatch(
 
   let scheduler: EffectScheduler
   if (flush === 'sync') {
+    // 同步更新
     scheduler = job as any // the scheduler function gets called directly
   } else if (flush === 'post') {
+    // 组件更新后
     scheduler = () => queuePostRenderEffect(job, instance && instance.suspense)
   } else {
     // default: 'pre'
@@ -350,6 +360,7 @@ function doWatch(
       } else {
         // with 'pre' option, the first call must happen before
         // the component is mounted so it is called synchronously.
+        // 第一次调用必须在组件安装之前发生，以便同步调用
         job()
       }
     }
@@ -364,6 +375,7 @@ function doWatch(
 
   // initial run
   if (cb) {
+    // 立即执行，即进行track 和 trigger
     if (immediate) {
       job()
     } else {
@@ -385,6 +397,7 @@ function doWatch(
     }
   }
 }
+
 
 // this.$watch
 export function instanceWatch(

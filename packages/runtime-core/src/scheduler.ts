@@ -2,7 +2,7 @@ import { ErrorCodes, callWithErrorHandling } from './errorHandling'
 import { isArray, NOOP } from '@vue/shared'
 import { ComponentInternalInstance, getComponentName } from './component'
 import { warn } from './warning'
-
+// 任务的数据结构
 export interface SchedulerJob extends Function {
   id?: number
   active?: boolean
@@ -22,7 +22,7 @@ export interface SchedulerJob extends Function {
    * responsibility to perform recursive state mutation that eventually
    * stabilizes (#1727).
    */
-  allowRecurse?: boolean
+  allowRecurse?: boolean // 是否允许递归触发本身
   /**
    * Attached by renderer.ts when setting up a component's render effect
    * Used to obtain component information when reporting max recursive updates.
@@ -36,7 +36,7 @@ export type SchedulerJobs = SchedulerJob | SchedulerJob[]
 let isFlushing = false
 let isFlushPending = false
 
-const queue: SchedulerJob[] = []
+const queue: SchedulerJob[] = [] // 队列
 let flushIndex = 0
 
 const pendingPreFlushCbs: SchedulerJob[] = []
@@ -80,7 +80,7 @@ function findInsertionIndex(id: number) {
 
   return start
 }
-
+// 加入队列
 export function queueJob(job: SchedulerJob) {
   // the dedupe search uses the startIndex argument of Array.includes()
   // by default the search index includes the current job that is being run
@@ -91,27 +91,33 @@ export function queueJob(job: SchedulerJob) {
   if (
     (!queue.length ||
       !queue.includes(
-        job,
+        // 去重判断
+        job, // isFlushing 表示正在执行队列 flushIndex 当前正在执行的job的index
         isFlushing && job.allowRecurse ? flushIndex + 1 : flushIndex
       )) &&
     job !== currentPreFlushParentJob
   ) {
     if (job.id == null) {
+      // 没有id放最后
       queue.push(job)
     } else {
+      // 二分查找job.id, 找出需要插入的位置
       queue.splice(findInsertionIndex(job.id), 0, job)
     }
     queueFlush()
   }
 }
-
+// 队列执行时机的实现
 function queueFlush() {
+  // 如果不是正在执行队列 / 等待执行队列
   if (!isFlushing && !isFlushPending) {
+    // 标记为等待执行队列
     isFlushPending = true
+    // 在下一个微任务执行队列
     currentFlushPromise = resolvedPromise.then(flushJobs)
   }
 }
-
+// 删除Job
 export function invalidateJob(job: SchedulerJob) {
   const i = queue.indexOf(job)
   if (i > flushIndex) {
@@ -127,6 +133,7 @@ function queueCb(
 ) {
   if (!isArray(cb)) {
     if (
+      // 去重判断
       !activeQueue ||
       !activeQueue.includes(cb, cb.allowRecurse ? index + 1 : index)
     ) {
@@ -136,6 +143,7 @@ function queueCb(
     // if cb is an array, it is a component lifecycle hook which can only be
     // triggered by a job, which is already deduped in the main queue, so
     // we can skip duplicate check here to improve perf
+    // 如果cb是一个数组，它只能是在一个job内触发的组件生命周期hook,并且这些cb已经去重过了，可以跳过去重判断
     pendingQueue.push(...cb)
   }
   queueFlush()
@@ -153,9 +161,12 @@ export function flushPreFlushCbs(
   seen?: CountMap,
   parentJob: SchedulerJob | null = null
 ) {
+  // 有Job才执行
   if (pendingPreFlushCbs.length) {
     currentPreFlushParentJob = parentJob
+    // 执行前去重，并赋值到 activePreFlushCbs
     activePreFlushCbs = [...new Set(pendingPreFlushCbs)]
+    // 将等待执行的Pre队列清空
     pendingPreFlushCbs.length = 0
     if (__DEV__) {
       seen = seen || new Map()
@@ -166,27 +177,34 @@ export function flushPreFlushCbs(
       preFlushIndex++
     ) {
       if (
+        // 开发模式下，校验无限递归的情况
         __DEV__ &&
         checkRecursiveUpdates(seen!, activePreFlushCbs[preFlushIndex])
       ) {
         continue
       }
+      // 执行Job
       activePreFlushCbs[preFlushIndex]()
     }
+    // 置空
     activePreFlushCbs = null
     preFlushIndex = 0
     currentPreFlushParentJob = null
     // recursively flush until it drains
+    // 可能递归，再次执行 flushPreFlushCbs， 如果队列为空就停止
     flushPreFlushCbs(seen, parentJob)
   }
 }
 
 export function flushPostFlushCbs(seen?: CountMap) {
+  // 队列为空则结束
   if (pendingPostFlushCbs.length) {
+    // 去重
     const deduped = [...new Set(pendingPostFlushCbs)]
     pendingPostFlushCbs.length = 0
 
     // #1947 already has active queue, nested flushPostFlushCbs call
+    // 特殊情况，发生了递归，在执行前 activePostFlushCbs 已经有值了
     if (activePostFlushCbs) {
       activePostFlushCbs.push(...deduped)
       return
@@ -196,9 +214,9 @@ export function flushPostFlushCbs(seen?: CountMap) {
     if (__DEV__) {
       seen = seen || new Map()
     }
-
+    // 优先级排序
     activePostFlushCbs.sort((a, b) => getId(a) - getId(b))
-
+    // 循环执行Job
     for (
       postFlushIndex = 0;
       postFlushIndex < activePostFlushCbs.length;
@@ -212,6 +230,7 @@ export function flushPostFlushCbs(seen?: CountMap) {
       }
       activePostFlushCbs[postFlushIndex]()
     }
+    // 清空
     activePostFlushCbs = null
     postFlushIndex = 0
   }
@@ -219,14 +238,16 @@ export function flushPostFlushCbs(seen?: CountMap) {
 
 const getId = (job: SchedulerJob): number =>
   job.id == null ? Infinity : job.id
-
+// 队列的执行， 即清空所有任务
 function flushJobs(seen?: CountMap) {
+  // 首先将等待状态设置为 false
   isFlushPending = false
+  // 将队列标记为正在执行状态
   isFlushing = true
   if (__DEV__) {
     seen = seen || new Map()
   }
-
+  // 执行 Pre 队列
   flushPreFlushCbs(seen)
 
   // Sort queue before flush.
@@ -236,7 +257,7 @@ function flushJobs(seen?: CountMap) {
   //    priority number)
   // 2. If a component is unmounted during a parent component's update,
   //    its update can be skipped.
-  queue.sort((a, b) => getId(a) - getId(b))
+  queue.sort((a, b) => getId(a) - getId(b)) //根据id大小进行优先级排序
 
   // conditional usage of checkRecursiveUpdate must be determined out of
   // try ... catch block since Rollup by default de-optimizes treeshaking
@@ -244,24 +265,28 @@ function flushJobs(seen?: CountMap) {
   // they would get eventually shaken by a minifier like terser, some minifiers
   // would fail to do that (e.g. https://github.com/evanw/esbuild/issues/1610)
   const check = __DEV__
-    ? (job: SchedulerJob) => checkRecursiveUpdates(seen!, job)
+    ? (job: SchedulerJob) => checkRecursiveUpdates(seen!, job) // 检测是否递归
     : NOOP
 
   try {
+    // 循环组件异步更新队列，执行job
     for (flushIndex = 0; flushIndex < queue.length; flushIndex++) {
       const job = queue[flushIndex]
+      // 仅在active时才调用job
       if (job && job.active !== false) {
         if (__DEV__ && check(job)) {
           continue
         }
         // console.log(`running:`, job.id)
+        // 执行job函数，并带有Vue内部的错误处理
         callWithErrorHandling(job, null, ErrorCodes.SCHEDULER)
       }
     }
   } finally {
+    // 清空 queue 队列
     flushIndex = 0
     queue.length = 0
-
+    // 执行Post 队列
     flushPostFlushCbs(seen)
 
     isFlushing = false
@@ -269,6 +294,8 @@ function flushJobs(seen?: CountMap) {
     // some postFlushCb queued jobs!
     // keep flushing until it drains.
     if (
+      // 如果还有Job,继续执行队列
+      // Post 队列运行过程中，可能又会将Job 加入进来，会在下一轮flushJob执行
       queue.length ||
       pendingPreFlushCbs.length ||
       pendingPostFlushCbs.length
